@@ -25,15 +25,16 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.RefUpdate;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.storage.file.FileRepository;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.URIish;
 import org.gitective.core.RepositoryUtils;
@@ -83,8 +84,7 @@ public class RepositoryUtilsTest extends GitTestCase {
 	 */
 	@Test
 	public void branchesForEmptyRepository() throws Exception {
-		Collection<String> branches = RepositoryUtils
-				.getBranches(new FileRepository(testRepo));
+		Collection<String> branches = RepositoryUtils.getBranches(new FileRepository(testRepo));
 		assertNotNull(branches);
 		assertTrue(branches.isEmpty());
 	}
@@ -97,12 +97,10 @@ public class RepositoryUtilsTest extends GitTestCase {
 	@Test
 	public void branchesForRepository() throws Exception {
 		add("test.txt", "content");
-		Collection<String> branches = RepositoryUtils
-				.getBranches(new FileRepository(testRepo));
+		Collection<String> branches = RepositoryUtils.getBranches(new FileRepository(testRepo));
 		assertNotNull(branches);
 		assertFalse(branches.isEmpty());
-		assertEquals(Constants.R_HEADS + Constants.MASTER, branches.iterator()
-				.next());
+		assertEquals(Constants.R_HEADS + Constants.MASTER, branches.iterator().next());
 	}
 
 	/**
@@ -120,8 +118,7 @@ public class RepositoryUtilsTest extends GitTestCase {
 	 */
 	@Test
 	public void tagsForEmptyRepository() throws Exception {
-		Collection<String> branches = RepositoryUtils
-				.getBranches(new FileRepository(testRepo));
+		Collection<String> branches = RepositoryUtils.getBranches(new FileRepository(testRepo));
 		assertNotNull(branches);
 		assertTrue(branches.isEmpty());
 	}
@@ -135,8 +132,7 @@ public class RepositoryUtilsTest extends GitTestCase {
 	public void tagsForRepository() throws Exception {
 		add("test.txt", "content");
 		tag("v1");
-		Collection<String> tags = RepositoryUtils.getTags(new FileRepository(
-				testRepo));
+		Collection<String> tags = RepositoryUtils.getTags(new FileRepository(testRepo));
 		assertNotNull(tags);
 		assertFalse(tags.isEmpty());
 		assertEquals("v1", tags.iterator().next());
@@ -149,8 +145,7 @@ public class RepositoryUtilsTest extends GitTestCase {
 	 */
 	@Test
 	public void noteRefsForEmptyRepository() throws Exception {
-		Collection<String> noteRefs = RepositoryUtils
-				.getNoteRefs(new FileRepository(testRepo));
+		Collection<String> noteRefs = RepositoryUtils.getNoteRefs(new FileRepository(testRepo));
 		assertNotNull(noteRefs);
 		assertTrue(noteRefs.isEmpty());
 	}
@@ -164,8 +159,7 @@ public class RepositoryUtilsTest extends GitTestCase {
 	public void noRemoteChanges() throws Exception {
 		add("test.txt", "content");
 		Repository repo = new FileRepository(testRepo);
-		Collection<RefDiff> diffs = RepositoryUtils.diffRemoteRefs(repo,
-				testRepo.toURI().toString());
+		Collection<RefDiff> diffs = RepositoryUtils.diffRemoteRefs(repo, testRepo.toURI().toString());
 		assertNotNull(diffs);
 		assertTrue(diffs.isEmpty());
 	}
@@ -181,8 +175,7 @@ public class RepositoryUtilsTest extends GitTestCase {
 		File repo2 = initRepo();
 		RevCommit commit2 = add(repo2, "test2.txt", "content2.txt");
 		Repository repo = new FileRepository(testRepo);
-		Collection<RefDiff> diffs = RepositoryUtils.diffRemoteRefs(repo, repo2
-				.toURI().toString());
+		Collection<RefDiff> diffs = RepositoryUtils.diffRemoteRefs(repo, repo2.toURI().toString());
 		assertNotNull(diffs);
 		assertFalse(diffs.isEmpty());
 		assertNotNull(diffs.iterator().next().getLocal());
@@ -203,21 +196,20 @@ public class RepositoryUtilsTest extends GitTestCase {
 		File repo2 = initRepo();
 		RevCommit commit2 = add(repo2, "test2.txt", "content2.txt");
 		Repository repo = new FileRepository(testRepo);
-		RefUpdate originMaster = repo.updateRef(Constants.R_REMOTES
-				+ Constants.DEFAULT_REMOTE_NAME + "/" + Constants.MASTER);
+		RefUpdate originMaster = repo
+				.updateRef(Constants.R_REMOTES + Constants.DEFAULT_REMOTE_NAME + "/" + Constants.MASTER);
 		originMaster.setNewObjectId(commit1);
 		originMaster.forceUpdate();
-		RemoteConfig config = new RemoteConfig(repo.getConfig(),
-				Constants.DEFAULT_REMOTE_NAME);
+		RemoteConfig config = new RemoteConfig(repo.getConfig(), Constants.DEFAULT_REMOTE_NAME);
 		config.addURI(new URIish(repo2.toURI().toString()));
 		config.update(repo.getConfig());
 		Collection<RefDiff> diffs = RepositoryUtils.diffOriginRefs(repo);
 		assertNotNull(diffs);
 		assertFalse(diffs.isEmpty());
-		assertNotNull(diffs.iterator().next().getLocal());
-		assertNotNull(diffs.iterator().next().getRemote());
-		assertEquals(commit1, diffs.iterator().next().getLocal().getObjectId());
-		assertEquals(commit2, diffs.iterator().next().getRemote().getObjectId());
+		RefDiff next = diffs.iterator().next();
+		assertNull(next.getLocal());
+		assertNotNull(next.getRemote());
+		assertEquals(commit2, next.getRemote().getObjectId());
 	}
 
 	/**
@@ -257,31 +249,22 @@ public class RepositoryUtilsTest extends GitTestCase {
 	public void mapNamesToEmail() {
 		assertNotNull(RepositoryUtils.mapNamesToEmails(null));
 		assertEquals(0, RepositoryUtils.mapNamesToEmails(null).size());
-		assertNotNull(RepositoryUtils.mapNamesToEmails(Collections
-				.<PersonIdent> emptyList()));
-		assertEquals(
-				0,
-				RepositoryUtils.mapNamesToEmails(
-						Collections.<PersonIdent> emptyList()).size());
+		assertNotNull(RepositoryUtils.mapNamesToEmails(Collections.<PersonIdent>emptyList()));
+		assertEquals(0, RepositoryUtils.mapNamesToEmails(Collections.<PersonIdent>emptyList()).size());
 
 		PersonIdent person1 = new PersonIdent("a", "b1");
 		PersonIdent person2 = new PersonIdent("a", "b2");
 		PersonIdent person3 = new PersonIdent("b", "c1");
-		PersonIdent person4 = new PersonIdent(null, "c2");
 		PersonIdent person5 = new PersonIdent("", "c2");
-		PersonIdent person6 = new PersonIdent("c", null);
 		Map<String, Set<String>> mapped = RepositoryUtils
-				.mapNamesToEmails(Arrays.asList(person1, person2, person3,
-						person4, person5, person6));
+				.mapNamesToEmails(Arrays.asList(person1, person2, person3, person5));
 		assertNotNull(mapped);
 		assertFalse(mapped.isEmpty());
-		assertEquals(3, mapped.size());
+		assertEquals(2, mapped.size());
 		assertNotNull(mapped.get("a"));
 		assertEquals(2, mapped.get("a").size());
 		assertNotNull(mapped.get("b"));
 		assertEquals(1, mapped.get("b").size());
-		assertNotNull(mapped.get("c"));
-		assertEquals(0, mapped.get("c").size());
 		assertTrue(mapped.get("a").contains("b1"));
 		assertTrue(mapped.get("a").contains("b2"));
 		assertTrue(mapped.get("b").contains("c1"));
@@ -294,31 +277,22 @@ public class RepositoryUtilsTest extends GitTestCase {
 	public void mapEmailsToNames() {
 		assertNotNull(RepositoryUtils.mapEmailsToNames(null));
 		assertEquals(0, RepositoryUtils.mapEmailsToNames(null).size());
-		assertNotNull(RepositoryUtils.mapEmailsToNames(Collections
-				.<PersonIdent> emptyList()));
-		assertEquals(
-				0,
-				RepositoryUtils.mapEmailsToNames(
-						Collections.<PersonIdent> emptyList()).size());
+		assertNotNull(RepositoryUtils.mapEmailsToNames(Collections.<PersonIdent>emptyList()));
+		assertEquals(0, RepositoryUtils.mapEmailsToNames(Collections.<PersonIdent>emptyList()).size());
 
 		PersonIdent person1 = new PersonIdent("b1", "a");
 		PersonIdent person2 = new PersonIdent("b2", "a");
 		PersonIdent person3 = new PersonIdent("c1", "b");
-		PersonIdent person4 = new PersonIdent("c2", null);
 		PersonIdent person5 = new PersonIdent("c2", "");
-		PersonIdent person6 = new PersonIdent(null, "c");
 		Map<String, Set<String>> mapped = RepositoryUtils
-				.mapEmailsToNames(Arrays.asList(person1, person2, person3,
-						person4, person5, person6));
+				.mapEmailsToNames(Arrays.asList(person1, person2, person3, person5));
 		assertNotNull(mapped);
 		assertFalse(mapped.isEmpty());
-		assertEquals(3, mapped.size());
+		assertEquals(2, mapped.size());
 		assertNotNull(mapped.get("a"));
 		assertEquals(2, mapped.get("a").size());
 		assertNotNull(mapped.get("b"));
 		assertEquals(1, mapped.get("b").size());
-		assertNotNull(mapped.get("c"));
-		assertEquals(0, mapped.get("c").size());
 		assertTrue(mapped.get("a").contains("b1"));
 		assertTrue(mapped.get("a").contains("b2"));
 		assertTrue(mapped.get("b").contains("c1"));

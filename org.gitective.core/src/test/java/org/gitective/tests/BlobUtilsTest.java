@@ -33,6 +33,7 @@ import org.eclipse.jgit.diff.Edit.Type;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.LargeObjectException;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.AbbreviatedObjectId;
 import org.eclipse.jgit.lib.AnyObjectId;
 import org.eclipse.jgit.lib.Constants;
@@ -41,7 +42,7 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectStream;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.storage.file.FileRepository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.gitective.core.BlobUtils;
 import org.gitective.core.CommitFinder;
 import org.gitective.core.GitException;
@@ -77,7 +78,7 @@ public class BlobUtilsTest extends GitTestCase {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void getContentNullObjectId() throws Exception {
-		BlobUtils.getContent(new FileRepository(testRepo), null);
+		BlobUtils.getContent(FileRepositoryBuilder.create(testRepo), null);
 	}
 
 	/**
@@ -87,7 +88,7 @@ public class BlobUtilsTest extends GitTestCase {
 	 */
 	@Test(expected = GitException.class)
 	public void badObjectLoader() throws Exception {
-		BlobUtils.getContent(new FileRepository(testRepo), ObjectId.zeroId());
+		BlobUtils.getContent(FileRepositoryBuilder.create(testRepo), ObjectId.zeroId());
 	}
 
 	/**

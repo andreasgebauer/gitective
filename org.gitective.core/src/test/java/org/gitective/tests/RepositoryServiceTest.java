@@ -23,11 +23,11 @@ package org.gitective.tests;
 
 import java.io.File;
 
-import junit.framework.Assert;
-
 import org.eclipse.jgit.lib.Repository;
 import org.gitective.core.RepositoryService;
 import org.junit.Test;
+
+import junit.framework.Assert;
 
 /**
  * Unit tests of {@link RepositoryService} class
